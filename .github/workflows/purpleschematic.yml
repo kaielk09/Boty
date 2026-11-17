@@ -1,0 +1,40 @@
+name: PurpleSchematic checks
+
+on:
+  push:
+    paths:
+      - "purpleschematic/**"
+      - ".github/workflows/purpleschematic.yml"
+  pull_request:
+    paths:
+      - "purpleschematic/**"
+      - ".github/workflows/purpleschematic.yml"
+
+jobs:
+  desktop:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: purpleschematic
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install --ignore-scripts
+      - run: npm run check
+
+  fabric-adapter:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.7"
+      - name: Compile Fabric adapter
+        working-directory: purpleschematic/adapter-fabric
+        run: gradle build
