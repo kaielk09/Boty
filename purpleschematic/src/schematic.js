@@ -37,7 +37,7 @@ function decodeVarints(data, count) {
   return values;
 }
 async function loadSchematic(filePath) {
-  if (!/\.(schem|schematic)$/i.test(filePath)) throw new Error("Wybierz plik .schem albo .schematic.");
+  if (!/\.schem$/i.test(filePath)) throw new Error("Wybierz plik Sponge .schem.");
   let buffer = fs.readFileSync(filePath);
   if (buffer[0] === 0x1f && buffer[1] === 0x8b) buffer = zlib.gunzipSync(buffer);
   const parsed = await parseNbt(buffer);
