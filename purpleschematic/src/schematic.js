@@ -54,7 +54,7 @@ async function loadSchematic(filePath) {
   if (!palette || !rawData) {
     throw new Error("Ten plik nie zawiera palety Sponge .schem z BlockData. Legacy .schematic i starsze warianty wymagają osobnego parsera.");
   }
-  const paletteEntries = Object.entries(palette).map(([id, state]) => [Number(state), id]);
+  const paletteEntries = Object.entries(palette).map(([id, state]) => [Number(state && typeof state === "object" && "value" in state ? state.value : state), id]);
   if (!paletteEntries.length || paletteEntries.some(([id, name]) => !Number.isInteger(id) || !/^minecraft:[a-z0-9_]+$/.test(name) && !/^[a-z0-9_.-]+:[a-z0-9_./-]+$/.test(name))) {
     throw new Error("Paleta zawiera nieprawidłowe identyfikatory bloków.");
   }
