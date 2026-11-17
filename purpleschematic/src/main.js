@@ -43,7 +43,14 @@ ipcMain.handle("schematic:open", async () => {
   });
   if (result.canceled || !result.filePaths[0]) return null;
   currentSchematic = await loadSchematic(result.filePaths[0]);
-  return { ...currentSchematic, blocks: undefined };
+  let modAnalysis = null;
+  try {
+    const ids = [...new Set(currentSchematic.blocks.map(block => block.id))];
+    if (ids.length <= 5000) modAnalysis = await requestAdapter("POST", "/analyze", { ids });
+  } catch (error) {
+    modAnalysis = { unavailable: true, message: error.message };
+  }
+  return { ...currentSchematic, blocks: undefined, modAnalysis };
 });
 ipcMain.handle("minecraft:status", async () => {
   try { return await requestAdapter("GET", "/status"); }
