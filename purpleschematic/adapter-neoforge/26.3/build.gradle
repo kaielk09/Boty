@@ -6,5 +6,5 @@ group = 'pl.purplecreator'
 version = '26.3-0.3.0'
 base { archivesName = 'purpleschematic-neoforge-26.3' }
 java.toolchain.languageVersion = JavaLanguageVersion.of(25)
-neoForge { version = '26.3.0.103' }
+neoForge { version = '26.3.0.103'; mods { purpleschematic { sourceSet(sourceSets.main) } } }
 tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8'; options.release = 25; options.compilerArgs += ['--add-modules', 'jdk.httpserver'] }
