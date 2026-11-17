@@ -48,9 +48,14 @@ document.getElementById("open-file").addEventListener("click", async () => {
     modInfo.className = "muted";
     if (analysis && analysis.blocks) {
       const modIds = [...new Set(analysis.blocks.map(item => item.namespace).filter(ns => ns && ns !== "minecraft"))];
+      const modMap = new Map((analysis.mods || []).map(mod => [mod.id, mod]));
+      const modLabels = modIds.map(id => {
+        const mod = modMap.get(id);
+        return mod ? mod.name + " (" + id + ", v" + mod.version + ")" : id + " (brak moda)";
+      });
       const missing = analysis.blocks.filter(item => !item.known);
       const noItem = analysis.blocks.filter(item => item.known && item.hasItem === false);
-      modInfo.textContent = "Wykryte przestrzenie modów: " + (modIds.length ? modIds.join(", ") : "brak modowanych bloków") +
+      modInfo.textContent = "Wykryte mody: " + (modLabels.length ? modLabels.join(", ") : "brak modowanych bloków") +
         " | Nieznane bloki: " + missing.length + " | Bloki bez przedmiotu: " + noItem.length;
       if (missing.length) {
         const missingLine = document.createElement("div");
