@@ -1,0 +1,11 @@
+plugins {
+    id 'java'
+    id 'net.minecraftforge.gradle' version '[7.0.29,8.0)'
+}
+group = 'pl.purplecreator'
+version = '1.21.1-0.3.0'
+base { archivesName = 'purpleschematic-forge-1.21.1' }
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+minecraft { mappings channel: 'official', version: '1.21.1' }
+dependencies { minecraft "net.minecraftforge:forge:1.21.1-52.1.15" }
+tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8'; options.release = 21; options.compilerArgs += ['--add-modules', 'jdk.httpserver'] }
