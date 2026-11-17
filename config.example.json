@@ -1,9 +1,0 @@
-{
-  "host": "localhost",
-  "port": 25565,
-  "username": "PurpleBot",
-  "auth": "offline",
-  "version": false,
-  "targetPlayer": "Steve",
-  "guardRadius": 8
-}
