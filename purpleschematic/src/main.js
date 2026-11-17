@@ -39,7 +39,7 @@ function createWindow() {
 ipcMain.handle("schematic:open", async () => {
   const result = await dialog.showOpenDialog({
     title: "Wybierz schemat Minecraft", properties: ["openFile"],
-    filters: [{ name: "Schematy Minecraft", extensions: ["schem", "schematic"] }]
+    filters: [{ name: "Schematy Minecraft", extensions: ["schem"] }]
   });
   if (result.canceled || !result.filePaths[0]) return null;
   currentSchematic = await loadSchematic(result.filePaths[0]);
