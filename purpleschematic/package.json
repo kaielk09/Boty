@@ -1,10 +1,10 @@
 {
   "name": "purpleschematic",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "PurpleSchematic - desktop Minecraft schematic control center",
   "main": "src/main.js",
-  "scripts": {"start": "electron .", "check": "node --check src/main.js && node --check src/preload.js && node --check src/schematic.js"},
+  "scripts": {"start": "electron .", "check": "node --check src/main.js && node --check src/preload.js && node --check src/schematic.js && node --check src/renderer.js"},
   "devDependencies": {"electron": "^33.2.1"},
   "dependencies": {"prismarine-nbt": "^2.7.0"}
 }
