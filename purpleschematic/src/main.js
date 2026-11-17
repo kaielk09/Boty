@@ -46,7 +46,13 @@ ipcMain.handle("schematic:open", async () => {
   let modAnalysis = null;
   try {
     const ids = [...new Set(currentSchematic.blocks.map(block => block.id))];
-    if (ids.length <= 5000) modAnalysis = await requestAdapter("POST", "/analyze", { ids });
+    if (ids.length <= 5000) {
+      const [analysis, modList] = await Promise.all([
+        requestAdapter("POST", "/analyze", { ids }),
+        requestAdapter("GET", "/mods")
+      ]);
+      modAnalysis = { ...analysis, mods: modList.mods || [] };
+    }
   } catch (error) {
     modAnalysis = { unavailable: true, message: error.message };
   }
