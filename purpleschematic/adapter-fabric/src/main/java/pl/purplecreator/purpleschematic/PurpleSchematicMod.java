@@ -3,11 +3,14 @@ package pl.purplecreator.purpleschematic;
 import com.google.gson.*;
 import com.sun.net.httpserver.*;
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.block.Block;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.Item;
+import net.minecraft.item.Items;
 import net.minecraft.registry.Registries;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -54,6 +57,78 @@ public class PurpleSchematicMod implements ModInitializer {
                 result.addProperty("connected", true);
                 result.addProperty("status", STATUS.get());
                 respond(exchange, 200, GSON.toJson(result));
+            });
+            httpServer.createContext("/mods", exchange -> {
+                if (!"GET".equals(exchange.getRequestMethod())) { respond(exchange, 405, "{\"error\":\"GET required\"}"); return; }
+                JsonObject result = new JsonObject();
+                JsonArray mods = new JsonArray();
+                FabricLoader.getInstance().getAllMods().stream()
+                    .sorted((a, b) -> a.getMetadata().getId().compareToIgnoreCase(b.getMetadata().getId()))
+                    .forEach(mod -> {
+                        JsonObject entry = new JsonObject();
+                        entry.addProperty("id", mod.getMetadata().getId());
+                        entry.addProperty("name", mod.getMetadata().getName());
+                        entry.addProperty("version", mod.getMetadata().getVersion().getFriendlyString());
+                        mods.add(entry);
+                    });
+                result.add("mods", mods);
+                result.addProperty("count", mods.size());
+                respond(exchange, 200, GSON.toJson(result));
+            });
+            httpServer.createContext("/analyze", exchange -> {
+                if (!"POST".equals(exchange.getRequestMethod())) { respond(exchange, 405, "{\"error\":\"POST required\"}"); return; }
+                try (InputStream input = exchange.getRequestBody()) {
+                    JsonObject request = JsonParser.parseString(new String(input.readAllBytes(), StandardCharsets.UTF_8)).getAsJsonObject();
+                    JsonArray ids = request.getAsJsonArray("ids");
+                    if (ids == null || ids.size() > 5000) { respond(exchange, 400, "{\"error\":\"Lista bloków jest nieprawidłowa lub przekracza 5000 wpisów.\"}"); return; }
+                    JsonObject result = new JsonObject();
+                    JsonArray detected = new JsonArray();
+                    for (JsonElement element : ids) {
+                        String rawId = element.getAsString();
+                        Identifier id = Identifier.tryParse(rawId);
+                        JsonObject entry = new JsonObject();
+                        entry.addProperty("id", rawId);
+                        if (id == null) {
+                            entry.addProperty("known", false);
+                            entry.addProperty("reason", "Nieprawidłowy identyfikator");
+                        } else {
+                            String namespace = id.getNamespace();
+                            boolean modLoaded = "minecraft".equals(namespace) || FabricLoader.getInstance().isModLoaded(namespace);
+                            boolean blockExists = Registries.BLOCK.containsId(id);
+                            entry.addProperty("namespace", namespace);
+                            entry.addProperty("modLoaded", modLoaded);
+                            entry.addProperty("blockExists", blockExists);
+                            entry.addProperty("known", blockExists);
+                            if (blockExists) {
+                                Block block = Registries.BLOCK.get(id);
+                                entry.addProperty("name", block.getName().getString());
+                                Item item = block.asItem();
+                                boolean hasItem = item != Items.AIR;
+                                entry.addProperty("hasItem", hasItem);
+                                if (hasItem) {
+                                    Identifier itemId = Registries.ITEM.getId(item);
+                                    entry.addProperty("itemId", itemId.toString());
+                                    entry.addProperty("itemExists", Registries.ITEM.containsId(itemId));
+                                } else {
+                                    entry.addProperty("itemId", "");
+                                    entry.addProperty("itemExists", false);
+                                }
+                            } else {
+                                entry.addProperty("hasItem", false);
+                                entry.addProperty("itemExists", false);
+                                entry.addProperty("reason", modLoaded ? "Blok nie jest zarejestrowany" : "Brak moda o tym identyfikatorze");
+                            }
+                        }
+                        detected.add(entry);
+                    }
+                    result.add("blocks", detected);
+                    result.addProperty("checked", detected.size());
+                    respond(exchange, 200, GSON.toJson(result));
+                } catch (Exception error) {
+                    JsonObject result = new JsonObject();
+                    result.addProperty("error", error.getMessage() == null ? "Nie można przeanalizować schematu" : error.getMessage());
+                    respond(exchange, 400, GSON.toJson(result));
+                }
             });
             httpServer.createContext("/build", exchange -> {
                 if (!"POST".equals(exchange.getRequestMethod())) { respond(exchange, 405, "{\"error\":\"POST required\"}"); return; }
@@ -146,8 +221,10 @@ public class PurpleSchematicMod implements ModInitializer {
                 activeTask = null; BUILD_LOCK.set(false); return;
             }
             if (!task.player.isCreative() && !consumeItem(task.player, block)) {
-                STATUS.set("Stopped: missing item " + identifier);
-                task.player.sendMessage(Text.literal("[PurpleSchematic] Brakuje w ekwipunku: " + identifier + ". Budowa zatrzymana."), false);
+                Identifier requiredItemId = Registries.ITEM.getId(block.asItem());
+                String requiredItem = block.asItem() == Items.AIR ? "brak przedmiotu do postawienia dla " + identifier : requiredItemId.toString();
+                STATUS.set("Stopped: missing item " + requiredItem);
+                task.player.sendMessage(Text.literal("[PurpleSchematic] Brakuje przedmiotu: " + requiredItem + ". Budowa zatrzymana."), false);
                 activeTask = null; BUILD_LOCK.set(false); return;
             }
             world.setBlockState(pos, block.getDefaultState(), Block.NOTIFY_ALL);
@@ -162,6 +239,8 @@ public class PurpleSchematicMod implements ModInitializer {
     }
 
     private static boolean consumeItem(ServerPlayerEntity player, Block block) {
+        Item required = block.asItem();
+        if (required == Items.AIR) return false;
         var inventory = player.getInventory();
         for (int i = 0; i < inventory.size(); i++) {
             ItemStack stack = inventory.getStack(i);
