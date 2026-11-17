@@ -1,0 +1,17 @@
+{
+  "name": "minecraft-boty",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Proste boty Minecraft Java Edition",
+  "main": "index.js",
+  "scripts": {
+    "afk": "node index.js afk",
+    "chat": "node index.js chat",
+    "follow": "node index.js follow",
+    "guard": "node index.js guard"
+  },
+  "dependencies": {
+    "mineflayer": "^4.30.0",
+    "mineflayer-pathfinder": "^2.4.5"
+  }
+}
