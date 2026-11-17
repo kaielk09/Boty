@@ -1,0 +1,10 @@
+plugins {
+    id 'java'
+    id 'net.neoforged.moddev' version '2.0.148'
+}
+group = 'pl.purplecreator'
+version = '1.21.11-0.3.0'
+base { archivesName = 'purpleschematic-neoforge-1.21.11' }
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+neoForge { version = '21.11.48'; mods { purpleschematic { sourceSet(sourceSets.main) } } }
+tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8'; options.release = 21; options.compilerArgs += ['--add-modules', 'jdk.httpserver'] }
