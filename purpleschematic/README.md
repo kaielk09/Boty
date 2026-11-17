@@ -43,6 +43,7 @@ W czacie wpisz `/purpleschem status`. Aplikacja desktopowa sprawdza połączenie
 ## Ograniczenia wersji 0.2.0
 
 - Legacy `.schematic` nie jest jeszcze obsługiwany przez parser.
+- Analiza wykrywa brakujące mody/bloki i powiązane itemy, ale nie instaluje automatycznie brakujących modów. Mod musi być zgodny z Fabric 1.20.1 i zainstalowany po stronie serwera/świata.
 - Obsługiwane są nazwy bloków z palety, ale ich właściwości (np. kierunek schodów, stan drzwi, połączenia redstone) nie są jeszcze odtwarzane — używany jest domyślny stan bloku.
 - Obrót zmienia współrzędne, ale nie obraca jeszcze właściwości bloków.
 - Nie ma jeszcze pauzy, wznowienia ani anulowania.
