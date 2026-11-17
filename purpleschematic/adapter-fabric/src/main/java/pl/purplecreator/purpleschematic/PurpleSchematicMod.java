@@ -30,7 +30,8 @@ public class PurpleSchematicMod implements ModInitializer {
     private static final BlockingQueue<JsonObject> TASKS = new LinkedBlockingQueue<>();
     private static final AtomicReference<String> STATUS = new AtomicReference<>("Waiting for desktop app");
     private static volatile HttpServer httpServer;
-    private static BuildTask activeTask;
+    private static volatile BuildTask activeTask;
+    private static final java.util.concurrent.atomic.AtomicBoolean BUILD_LOCK = new java.util.concurrent.atomic.AtomicBoolean(false);
 
     @Override
     public void onInitialize() {
@@ -62,7 +63,7 @@ public class PurpleSchematicMod implements ModInitializer {
                     if (blocks == null || blocks.isEmpty() || blocks.size() > 100000) {
                         respond(exchange, 400, "{\"error\":\"Schemat musi mieć od 1 do 100000 bloków.\"}"); return;
                     }
-                    if (!TASKS.isEmpty() || activeTask != null) {
+                    if (!BUILD_LOCK.compareAndSet(false, true)) {
                         respond(exchange, 409, "{\"error\":\"Inne zadanie budowania już trwa.\"}"); return;
                     }
                     TASKS.offer(task);
@@ -94,7 +95,7 @@ public class PurpleSchematicMod implements ModInitializer {
 
     private static void stopBridge() {
         if (httpServer != null) { httpServer.stop(0); httpServer = null; }
-        TASKS.clear(); activeTask = null; STATUS.set("Minecraft stopped");
+        TASKS.clear(); activeTask = null; BUILD_LOCK.set(false); STATUS.set("Minecraft stopped");
     }
 
     private static void tickBuild(MinecraftServer server) {
@@ -103,11 +104,11 @@ public class PurpleSchematicMod implements ModInitializer {
             if (next == null) return;
             ServerPlayerEntity operator = server.getPlayerManager().getPlayerList().stream()
                 .filter(player -> player.hasPermissionLevel(2)).findFirst().orElse(null);
-            if (operator == null) { STATUS.set("Build rejected: operator player required"); return; }
+            if (operator == null) { STATUS.set("Build rejected: operator player required"); BUILD_LOCK.set(false); return; }
             boolean requestedCreative = "creative".equalsIgnoreCase(next.has("mode") ? next.get("mode").getAsString() : "creative");
             if (requestedCreative != operator.isCreative()) {
                 STATUS.set("Build rejected: selected mode does not match player's actual game mode");
-                return;
+                BUILD_LOCK.set(false); return;
             }
             JsonObject origin = next.getAsJsonObject("origin");
             activeTask = new BuildTask(next.getAsJsonArray("blocks"), origin,
@@ -117,12 +118,12 @@ public class PurpleSchematicMod implements ModInitializer {
         BuildTask task = activeTask;
         if (task == null) return;
         if (!task.player.isAlive() || !task.player.hasPermissionLevel(2) || task.player.getServer() != server) {
-            STATUS.set("Build stopped: operator unavailable"); activeTask = null; return;
+            STATUS.set("Build stopped: operator unavailable"); activeTask = null; BUILD_LOCK.set(false); return;
         }
         if (task.index >= task.blocks.size()) {
             STATUS.set("Completed " + task.index + " blocks");
             task.player.sendMessage(Text.literal("[PurpleSchematic] Budowanie zakończone: " + task.index + " bloków."), false);
-            activeTask = null; return;
+            activeTask = null; BUILD_LOCK.set(false); return;
         }
         try {
             JsonObject blockData = task.blocks.get(task.index).getAsJsonObject();
@@ -130,11 +131,6 @@ public class PurpleSchematicMod implements ModInitializer {
             if (identifier == null || !Registries.BLOCK.containsId(identifier)) throw new IllegalArgumentException("Nieznany blok: " + blockData.get("id").getAsString());
             Block block = Registries.BLOCK.get(identifier);
             if (block == null || block == net.minecraft.block.Blocks.AIR) { task.index++; return; }
-            if (!task.player.isCreative() && !consumeItem(task.player, block)) {
-                STATUS.set("Stopped: missing item " + identifier);
-                task.player.sendMessage(Text.literal("[PurpleSchematic] Brakuje w ekwipunku: " + identifier + ". Budowa zatrzymana."), false);
-                activeTask = null; return;
-            }
             int x = blockData.get("x").getAsInt(), y = blockData.get("y").getAsInt(), z = blockData.get("z").getAsInt();
             int rx = x, rz = z;
             switch (Math.floorMod(task.rotation, 360)) {
@@ -144,13 +140,24 @@ public class PurpleSchematicMod implements ModInitializer {
             }
             BlockPos pos = new BlockPos(task.originX + rx, task.originY + y, task.originZ + rz);
             ServerWorld world = task.player.getServerWorld();
-            if (world.isInBuildLimit(pos)) world.setBlockState(pos, block.getDefaultState(), Block.NOTIFY_ALL);
+            if (!world.isInBuildLimit(pos)) {
+                STATUS.set("Build stopped: position outside world height");
+                task.player.sendMessage(Text.literal("[PurpleSchematic] Pozycja poza dozwoloną wysokością świata. Budowa zatrzymana."), false);
+                activeTask = null; BUILD_LOCK.set(false); return;
+            }
+            if (!task.player.isCreative() && !consumeItem(task.player, block)) {
+                STATUS.set("Stopped: missing item " + identifier);
+                task.player.sendMessage(Text.literal("[PurpleSchematic] Brakuje w ekwipunku: " + identifier + ". Budowa zatrzymana."), false);
+                activeTask = null; BUILD_LOCK.set(false); return;
+            }
+            world.setBlockState(pos, block.getDefaultState(), Block.NOTIFY_ALL);
             task.index++;
             if (task.index % 100 == 0) STATUS.set("Building " + task.index + "/" + task.blocks.size());
         } catch (Exception error) {
             STATUS.set("Build stopped: " + error.getMessage());
             task.player.sendMessage(Text.literal("[PurpleSchematic] Błąd: " + error.getMessage()), false);
             activeTask = null;
+            BUILD_LOCK.set(false);
         }
     }
 
