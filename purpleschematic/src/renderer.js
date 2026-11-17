@@ -43,6 +43,24 @@ document.getElementById("open-file").addEventListener("click", async () => {
     details.textContent = `Wymiary: ${result.width} × ${result.height} × ${result.length} | Bloki: ${result.volume.toLocaleString("pl-PL")} | Paleta: ${result.paletteSize}`;
     const note = document.createElement("div"); note.className = "muted"; note.textContent = result.note;
     output.append(heading, details, note);
+    const analysis = result.modAnalysis;
+    const modInfo = document.createElement("div");
+    modInfo.className = "muted";
+    if (analysis && analysis.blocks) {
+      const modIds = [...new Set(analysis.blocks.map(item => item.namespace).filter(ns => ns && ns !== "minecraft"))];
+      const missing = analysis.blocks.filter(item => !item.known);
+      const noItem = analysis.blocks.filter(item => item.known && item.hasItem === false);
+      modInfo.textContent = "Wykryte przestrzenie modów: " + (modIds.length ? modIds.join(", ") : "brak modowanych bloków") +
+        " | Nieznane bloki: " + missing.length + " | Bloki bez przedmiotu: " + noItem.length;
+      if (missing.length) {
+        const missingLine = document.createElement("div");
+        missingLine.textContent = "Brakujące/nieznane: " + missing.slice(0, 12).map(item => item.id).join(", ");
+        output.append(modInfo, missingLine);
+      } else output.append(modInfo);
+    } else {
+      modInfo.textContent = "Rozpoznawanie modów: uruchom Minecraft z adapterem Fabric, aby sprawdzić rejestry bloków i przedmiotów.";
+      output.append(modInfo);
+    }
     await refreshConnection();
   } catch (error) { hasSchematic = false; output.textContent = "Błąd odczytu: " + error.message; }
 });
