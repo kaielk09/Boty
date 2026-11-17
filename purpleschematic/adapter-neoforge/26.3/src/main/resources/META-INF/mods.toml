@@ -1,0 +1,20 @@
+modLoader="javafml"
+loaderVersion="[1,)"
+license="MIT"
+[[mods]]
+modId="purpleschematic"
+version="0.3.0"
+displayName="PurpleSchematic"
+description='''PurpleSchematic Minecraft schematic bridge with automatic mod registry detection.'''
+[[dependencies.purpleschematic]]
+modId="neoforge"
+type="required"
+versionRange="[26.3.0.103,)"
+ordering="NONE"
+side="BOTH"
+[[dependencies.purpleschematic]]
+modId="minecraft"
+type="required"
+versionRange="[26.3]"
+ordering="NONE"
+side="BOTH"
