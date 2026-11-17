@@ -4,7 +4,7 @@ import com.google.gson.*;
 import com.sun.net.httpserver.*;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -73,7 +73,7 @@ public class PurpleSchematicNeoForge {
                     JsonArray found=new JsonArray();
                     for(JsonElement value:ids){
                         String raw=value.getAsString(); JsonObject x=new JsonObject(); x.addProperty("id",raw);
-                        ResourceLocation id=parseId(raw);
+                        Identifier id=parseId(raw);
                         if(id==null){x.addProperty("known",false);x.addProperty("reason","Invalid identifier");}
                         else {
                             Block block=BuiltInRegistries.BLOCK.getOptional(id).orElse(null);
@@ -107,7 +107,7 @@ public class PurpleSchematicNeoForge {
         } catch(IOException ex){status="Bridge failed: "+ex.getMessage();}
     }
 
-    private static ResourceLocation parseId(String raw){try{return ResourceLocation.parse(raw);}catch(Exception ex){return null;}}
+    private static Identifier parseId(String raw){try{return Identifier.parse(raw);}catch(Exception ex){return null;}}
     private static void respond(HttpExchange e,int code,String body)throws IOException{
         byte[] bytes=body.getBytes(StandardCharsets.UTF_8);e.getResponseHeaders().set("Content-Type","application/json; charset=utf-8");e.sendResponseHeaders(code,bytes.length);
         try(OutputStream out=e.getResponseBody()){out.write(bytes);}
@@ -127,7 +127,7 @@ public class PurpleSchematicNeoForge {
         if(!task.player.isAlive()||!task.player.hasPermissions(2)||task.player.getServer()!=server){status="Build stopped: operator unavailable";active=null;LOCK.set(false);return;}
         if(task.index>=task.blocks.size()){status="Completed "+task.index+" blocks";task.player.sendSystemMessage(Component.literal("[PurpleSchematic] Build complete: "+task.index));active=null;LOCK.set(false);return;}
         try{
-            JsonObject data=task.blocks.get(task.index).getAsJsonObject();ResourceLocation id=parseId(data.get("id").getAsString());
+            JsonObject data=task.blocks.get(task.index).getAsJsonObject();Identifier id=parseId(data.get("id").getAsString());
             Block block=id==null?null:BuiltInRegistries.BLOCK.getOptional(id).orElse(null);
             if(block==null)throw new IllegalArgumentException("Unknown block: "+data.get("id").getAsString());
             if(block==Blocks.AIR){task.index++;return;}
