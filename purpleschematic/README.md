@@ -20,11 +20,13 @@ Każdy adapter jest osobnym modem. Nie instaluj jednocześnie adapterów Forge, 
 |---|---:|---:|---|
 | Fabric | 1.20.1 | 17 | `adapter-fabric` |
 | Forge | 1.21.1 | 21 | `adapter-forge/1.21.1` |
+| Forge | 1.21.11 | 21 | `adapter-forge/1.21.11` |
 | NeoForge | 1.21.1 | 21 | `adapter-neoforge/1.21.1` |
+| NeoForge | 1.21.11 | 21 | `adapter-neoforge/1.21.11` |
 | Forge | 26.3 | 25 | `adapter-forge/26.3` |
 | NeoForge | 26.3 | 25 | `adapter-neoforge/26.3` |
 
-To są obecnie dodane profile bazowe. Nie oznaczają jeszcze potwierdzonej obsługi każdej wersji pośredniej, np. 1.21.4, 1.21.10 czy 26.1/26.2. Dla tych wydań trzeba dodać i skompilować osobne profile zgodne z ich wersjami loaderów i API.
+To są obecnie dodane profile bazowe. Nie oznaczają jeszcze potwierdzonej obsługi każdej wersji pośredniej, np. 1.21.4, 1.21.5, 1.21.8, 1.21.10, 26.1.2 czy 26.2. Dla tych wydań trzeba dodać i skompilować osobne profile zgodne z ich wersjami loaderów i API.
 
 ## Budowanie adapterów
 
