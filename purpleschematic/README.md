@@ -1,8 +1,8 @@
 # PurpleSchematic
 
-Desktopowy Minecraft Control Center w ciemnym, fioletowym motywie.
+Desktopowy Minecraft Control Center + adapter Fabric.
 
-## Uruchomienie
+## Aplikacja desktopowa
 
 Wymagania: Node.js 20 lub nowszy.
 
@@ -12,23 +12,41 @@ npm install
 npm start
 ```
 
-## Co działa w wersji 0.1.0
+## Pierwsza integracja Minecraft
 
-- Osobna aplikacja desktopowa oparta na Electron.
-- Nawigacja między zakładkami.
-- Wybór trybu Creative / Survival, współrzędnych i obrotu w interfejsie.
-- Wybieranie plików `.schem` i `.schematic`.
-- Wstępny odczyt wymiarów i metadanych NBT dla obsługiwanych plików.
+Pierwszy adapter jest przygotowany dla **Minecraft Java 1.20.1 + Fabric + Fabric API**. Jest to adapter po stronie serwera, więc działa w świecie singleplayer (zintegrowany serwer) oraz na serwerze, na którym administrator zainstalował mod.
 
-## Ważne ograniczenia
+### Budowanie adaptera
 
-Ta wersja **nie łączy się jeszcze z uruchomionym Minecraftem i nie buduje automatycznie**. Przycisk budowania jest celowo zablokowany, aby interfejs nie udawał, że wykonał operację. Odczyt metadanych nie oznacza jeszcze pełnego odtworzenia palety i danych wszystkich bloków.
+Wymagania: JDK 17 i Gradle.
 
-Następne etapy:
-1. Pełny parser formatów Sponge `.schem` i legacy `.schematic`, z testowymi plikami.
-2. Podgląd 3D, przesuwanie i obracanie projektu.
-3. Lokalny protokół komunikacji oraz pierwszy adapter dla wybranej wersji i loadera Minecraft.
-4. Bezpieczne budowanie z kontrolą ekwipunku, postępem, pauzą i anulowaniem.
-5. Kolejne adaptery i funkcje. Docelowe 500+ funkcji ma być wdrażane i testowane etapami; nie są one jeszcze dostępne w tej wersji.
+```bash
+cd purpleschematic/adapter-fabric
+gradle build
+```
 
-Kompatybilność z różnymi wersjami i loaderami (Fabric, Forge, NeoForge) wymaga osobnych adapterów. Nie jest obiecywana w wersji 0.1.0.
+Gotowy plik JAR znajdziesz w `adapter-fabric/build/libs/`. Skopiuj go do folderu `mods` instancji Minecraft 1.20.1 z Fabric API, uruchom grę i wejdź do świata.
+
+W czacie wpisz `/purpleschem status`. Aplikacja desktopowa sprawdza połączenie z adapterem pod adresem `127.0.0.1:8766`.
+
+### Import i budowanie
+
+- Obsługiwany import: Sponge `.schem` z tagami `Palette` i `BlockData` (VarInt).
+- Limit pojedynczego schematu w tej wersji: 100 000 bloków.
+- Ustawiasz tryb, współrzędne i obrót w aplikacji, a następnie klikasz **Buduj**.
+- Adapter umieszcza bloki stopniowo, po jednym na tick.
+- Creative: bez zużywania przedmiotów.
+- Survival: pobiera odpowiedni przedmiot z ekwipunku przed umieszczeniem bloku; zatrzymuje pracę, gdy brakuje materiału.
+- Wybrany tryb musi odpowiadać rzeczywistemu trybowi gracza w Minecraft.
+- Wymagany jest gracz z uprawnieniami operatora (poziom 2). Adapter nie omija uprawnień serwera.
+
+## Ograniczenia wersji 0.2.0
+
+- Legacy `.schematic` nie jest jeszcze obsługiwany przez parser.
+- Obsługiwane są nazwy bloków z palety, ale ich właściwości (np. kierunek schodów, stan drzwi, połączenia redstone) nie są jeszcze odtwarzane — używany jest domyślny stan bloku.
+- Obrót zmienia współrzędne, ale nie obraca jeszcze właściwości bloków.
+- Nie ma jeszcze pauzy, wznowienia ani anulowania.
+- Adapter jest tylko dla Fabric 1.20.1; Forge, NeoForge i inne wersje wymagają osobnych adapterów.
+- Nie uruchomiono jeszcze kompilacji Gradle ani testu w prawdziwym świecie Minecraft, więc adapter jest dodany jako kod źródłowy do sprawdzenia, a nie jako potwierdzony działający plik JAR.
+
+Nie instaluj moda na serwerze publicznym bez zgody administratora. Przed budowaniem sprawdź pozycję i zrób kopię świata.
