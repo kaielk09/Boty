@@ -54,6 +54,14 @@ jobs:
             java: "21"
             gradle: "8.10.2"
           - loader: forge
+            mc: "1.21.11"
+            java: "21"
+            gradle: "8.10.2"
+          - loader: neoforge
+            mc: "1.21.11"
+            java: "21"
+            gradle: "8.10.2"
+          - loader: forge
             mc: "26.3"
             java: "25"
             gradle: "9.2.1"
