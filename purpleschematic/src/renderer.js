@@ -26,6 +26,8 @@ async function refreshConnection() {
   statusText.textContent = status.connected ? "Adapter Minecraft połączony" : "Adapter Minecraft niepodłączony";
   statusBadge.textContent = status.connected ? "POŁĄCZONO" : "BRAK POŁĄCZENIA";
   statusBadge.classList.toggle("connected", !!status.connected);
+  const mainStatus = document.getElementById("connection-text-main");
+  if (mainStatus) mainStatus.textContent = status.connected ? (status.status || "Połączenie z Minecraftem aktywne") : "Brak połączenia z adapterem Minecraft";
   buildButton.disabled = !status.connected || !hasSchematic;
 }
 document.getElementById("open-file").addEventListener("click", async () => {
